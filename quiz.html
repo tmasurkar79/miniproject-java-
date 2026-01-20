@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EES CT-1 Quiz Game</title>
+<style>
+  body{font-family:Segoe UI,Helvetica,Arial;background:#f2f6ff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+  #card{background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);width:90%;max-width:550px;padding:30px 35px;text-align:center}
+  h2{margin-top:0;font-size:22px;color:#003366}
+  .q{font-size:18px;margin:20px 0 25px;text-align:left}
+  .opt{width:100%;margin:7px 0;padding:12px;border:2px solid #ccd9ff;border-radius:8px;background:#fafbff;font-size:16px;cursor:pointer;transition:.2s}
+  .opt:hover{background:#e6ecff}
+  .opt.correct{background:#d1ffd1;border-color:#28a745}
+  .opt.wrong{background:#ffe1e1;border-color:#dc3545}
+  #bar{display:flex;justify-content:space-between;font-size:14px;color:#555;margin-bottom:15px}
+  #next{background:#0052cc;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:16px;cursor:pointer;margin-top:18px}
+  #next:disabled{background:#99bfff;cursor:not-allowed}
+  #score{font-size:20px;font-weight:bold;color:#0052cc;margin-top:12px}
+</style>
+</head>
+<body>
+<div id="card">
+  <div id="bar"><span id="prog">Q 1 / 55</span><span id="scr">Score: 0</span></div>
+  <h2>EES CT-1 Quiz</h2>
+  <div class="q" id="ques"></div>
+  <div id="opts"></div>
+  <button id="next" disabled>Next →</button>
+  <div id="score"></div>
+</div>
+
+<script>
+const raw=[
+["Van mahotsav is an annual tree-planting festival in India celebrated on","1st July"],
+["Reprocessing material to make another product","recycle"],
+["Which of the following is a greenhouse gas?","Methane"],
+["The Taj Mahal is affected by","Acid rain"],
+["Earth Summit, the conference on Environment and Development, was held at Rio de Janeiro in","1992"],
+["Montreal Protocol is related to","Depletion of ozone layer"],
+["Development that meets the needs of the present without compromising the ability of future generations is called","Sustainable development"],
+["Area which is interface between land and river or stream is called","Riparian"],
+["Chernobyl nuclear-power-plant disaster took place on April 26,","1986"],
+["ODS stands for","Ozone depleting substances"],
+["The life-supporting gases O₂, CO₂ and N₂ are chiefly concentrated in the","Troposphere"],
+["Biogas generation is mainly based on the principle of","Anaerobic degradation"],
+["Natural resources do not include","refined oil"],
+["He is known for the Chipko Movement","Sunderlal Bahuguna"],
+["Out of the total water reserve of the world, about ... is salty and ... is fresh","97 %, 3 %"],
+["Fossil fuels are termed as","non-renewable energy"],
+["Sunlight, wind and rain are examples of ... energy","renewable"],
+["Water cleaned and reused is called","Cyclic resources"],
+["Nuclear power plants use ... as fuel","uranium"],
+["Kalpakkam nuclear power plant is in","Chennai"],
+["A food chain consists of","Producers, Consumers, Decomposers"],
+["Biotic component of biosphere is not constituted by","Air"],
+["A layer of sediment or rock that is highly permeable and contains water is called","Aquifer"],
+["Biogas is a renewable source of","Energy"],
+["Major consumer of wood from forest is","Paper Industry"],
+["Lignite, bituminous and anthracite are different types of","Coal"],
+["Zone consisting air, water and soil is known as","Biosphere"],
+["Earthworms and bacteria are called","Decomposers"],
+["Region where fresh water meets salt water is called","Estuaries"],
+["The layers of atmosphere consist of","Troposphere, Stratosphere, Mesosphere and Thermosphere"],
+["Biodiversity means","Living natural resources"],
+["Chipko movement was started to conserve","Forest"],
+["Atmospheric ozone layer which protects us from UV-B & C is getting depleted most by","Chlorofluorocarbon"],
+["Environmental study does not include","Literature"],
+["The layer of atmosphere containing much of ozone gas is","stratosphere"],
+["Geothermal energy is an example of","renewable"],
+["The Himalayas are often called","the roof of the world"],
+["Diamond is the non-metallic mineral","True"],
+["The main driving force for ecological system is","solar energy"],
+["Which one is NOT a recyclable waste?","Sand"],
+["In Maharashtra the nuclear power plant is at","Tarapur"],
+["The greenhouse gas absorbed by forests as raw material for photosynthesis is","CO₂"],
+["World Environment Day is on","June 5"],
+["Hydrosphere includes","Water bodies"],
+["5R concept refers to","Refuse, Reduce, Reuse, Recycle, Recover"],
+["Plants, algae and photosynthetic bacteria are all examples of","producers"],
+["Gir National Park is in","Gujarat"],
+["Killing of prohibited wild animals for illegal trading is called","Poaching"],
+["National park is an example of ... conservation strategy","in-situ"],
+["Germplasm banks are established for ... conservation","ex-situ"],
+["In cryopreservation, germplasm is stored at","-196 °C in liquid nitrogen"],
+["National park is an example of ... conservation strategy","in-situ"],
+["Organisms which feed on dead organic matter are called","saprotrophs"],
+["Species with thin population localised within restricted area is said to be","Rare"],
+["Which one has maximum genetic diversity in India?","Mango"]
+];
+
+let pool=[...Array(raw.length).keys()], idx, score=0, answered=false, selOpt;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function pick(){idx=pool.splice(Math.floor(Math.random()*pool.length),1)[0]}
+function makeOpts(ans){
+  const decoys={
+    "1st July":["2nd June","1st December","15th September"],
+    "recycle":["reduce","reuse","recovery"],
+    "Methane":["Sulphur dioxide","Nitrogen","Oxygen"],
+    "Acid rain":["soil pollution","noise pollution","fog"],
+    "1992":["1892","2012","2011"],
+    "Depletion of ozone layer":["cartoon layer","SO₂ layer","Sulphur layer"],
+    "Sustainable development":["stable development","future development","natural development"],
+    "Riparian":["Biosphere","biotope","Habitat"],
+    "1986":["1900","2000","2001"],
+    "Ozone depleting substances":["Oxygen depleting substance","Ozone developing substances","Oxygen deposit substances"],
+    "Troposphere":["exosphere","Homosphere","stratosphere"],
+    "Anaerobic degradation":["aerobic decomposition","putrefaction","none of the above"],
+    "refined oil":["water","air","wood"],
+    "Sunderlal Bahuguna":["Atal Bihari Bajpeyi","Anna Hajare","Pandit Nehru"],
+    "97 %, 3 %":["3 %, 97 %","1 %, 99 %","2 %, 98 %"],
+    "non-renewable energy":["Renewable energy","earth energy","planet energy"],
+    "renewable":["non-renewable","potential","kinetic"],
+    "Cyclic resources":["non cyclic resources","Continuous resources","proper resources"],
+    "uranium":["sulphate","tungsten","O₃"],
+    "Chennai":["Nagpur","Mumbai","Bhopal"],
+    "Producers, Consumers, Decomposers":["Producers, Carnivores, Decomposers","Primary Producers, Herbivores, Carnivores","Producers, Primary Consumers, Carnivores"],
+    "Air":["Producer","Consumer","Decomposer"],
+    "Aquifer":["Spring","Glacier","Seepage"],
+    "Energy":["Heat","Light","Fossil"],
+    "Paper Industry":["Thermal Power Plant","Chemical Industry","None of the above"],
+    "Coal":["Nuclear fuel","Biogas","Natural gas"],
+    "Biosphere":["Lithosphere","Hydrosphere","Atmosphere"],
+    "Decomposers":["Producers","Consumers","Autotrophs"],
+    "Estuaries":["Sea","River","Lake"],
+    "Troposphere, Stratosphere, Mesosphere and Thermosphere":["Biosphere, Hydrosphere","Lithosphere, Hydrosphere","Lithosphere, Biosphere"],
+    "Living natural resources":["Oceans and seas","land and forest","Atmosphere"],
+    "Forest":["grasslands","Deserts","Soil"],
+    "Chlorofluorocarbon":["Carbon dioxide","Carbon monoxide","Sulphur dioxide"],
+    "Literature":["Psychology","Demography","Ethics"],
+    "stratosphere":["Troposphere","Atmosphere","Ionosphere"],
+    "renewable":["non-renewable","potential","kinetic"],
+    "the roof of the world":["The top of the world","The cover of the world","The shield of the world"],
+    "True":["False"],
+    "solar energy":["wind energy","water energy","earth energy"],
+    "Sand":["Metal","Plastic","Glass"],
+    "Tarapur":["Chandrapur","Nagpur","Sangli"],
+    "CO₂":["O₂","SO₂","O₃"],
+    "June 5":["June 11","June 11","July 5"],
+    "Water bodies":["Animal","Plants","Soil"],
+    "Refuse, Reduce, Reuse, Recycle, Recover":["Reduce, Reuse, Recover, Refuse, Recycle","Recycle, Recover, Reduce, Reuse, Refuse","Recover, Refuse, Recycle, Reuse, Reduce"],
+    "producers":["reducers","abiotic","non-biotic"],
+    "Gujarat":["Maharashtra","Goa","M.P."],
+    "Poaching":["Morching","Kill-Killing","Cross-Killing"],
+    "in-situ":["ex-situ","over situ","protection of wildlife"],
+    "ex-situ":["in-situ","over situ","none of these"],
+    "-196 °C in liquid nitrogen":["196 °C in liquid nitrogen","0 °C in liquid nitrogen","100 °C in liquid nitrogen"],
+    "in-situ":["ex-situ","over situ","protection of wildlife"],
+    "saprotrophs":["fungi","zooplanktons","algae"],
+    "Rare":["Threatened","Endangered","Vulnerable"],
+    "Mango":["Tea","Teak","Wheat"]
+  };
+  const others=decoys[ans]||["optB","optC","optD"];
+  const opts=[ans,...others].slice(0,4);
+  shuffle(opts);
+  return opts;
+}
+function load(){
+  answered=false;selOpt=null;
+  pick();
+  const[q,a]=raw[idx];
+  const opts=makeOpts(a);
+  document.getElementById('ques').textContent=q;
+  document.getElementById('opts').innerHTML=opts.map((o,i)=>
+    `<div class="opt" data="${o}" onclick="check(this)">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+  document.getElementById('next').disabled=true;
+  document.getElementById('prog').textContent=`Q ${55-pool.length} / 55`;
+}
+function check(el){
+  if(answered)return;answered=true;selOpt=el;
+  const correct=(el.getAttribute('data')===raw[idx][1]);
+  if(correct){el.classList.add('correct');score++}
+  else{el.classList.add('wrong');document.querySelector(`.opt[data="${raw[idx][1]}"]`).classList.add('correct')}
+  document.getElementById('scr').textContent=`Score: ${score}`;
+  document.getElementById('next').disabled=false;
+}
+document.getElementById('next').onclick=()=>{
+  if(pool.length){load()}else{
+    document.getElementById('ques').textContent='Finished!';
+    document.getElementById('opts').innerHTML='';
+    document.getElementById('next').style.display='none';
+    document.getElementById('score').textContent=`Final Score: ${score} / 55  (${Math.round(score/55*100)} %)`;
+  }
+};
+load();
+</script>
+</body>
+</html>
