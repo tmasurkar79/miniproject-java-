@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EES Quiz Game - 65 Questions (Random)</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:Segoe UI,Helvetica,Arial;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:20px}
+  #game{width:800px;max-width:95%;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:30px;position:relative}
+  #header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #eee}
+  #title{font-size:24px;font-weight:bold;color:#333}
+  #progress-box{text-align:right}
+  #progress{font-size:16px;color:#667eea;font-weight:bold}
+  #question-box{background:#f8f9fa;border-radius:12px;padding:25px;margin-bottom:20px;min-height:100px}
+  #question{font-size:18px;line-height:1.6;color:#333}
+  #question-num{color:#667eea;font-weight:bold;margin-right:8px}
+  #options{display:grid;gap:12px;margin-bottom:20px}
+  .option{background:#fff;border:2px solid #e0e0e0;border-radius:10px;padding:15px 20px;cursor:pointer;transition:all .2s;font-size:16px;text-align:left;display:flex;align-items:center}
+  .option:hover{border-color:#667eea;background:#f0f4ff}
+  .option.selected{border-color:#667eea;background:#e8eeff}
+  .option.correct{border-color:#28a745;background:#d4edda;color:#155724}
+  .option.wrong{border-color:#dc3545;background:#f8d7da;color:#721c24}
+  .option-letter{font-weight:bold;color:#667eea;margin-right:12px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#f0f4ff;border-radius:50%;font-size:14px}
+  .option.correct .option-letter{background:#28a745;color:#fff}
+  .option.wrong .option-letter{background:#dc3545;color:#fff}
+  #controls{display:flex;gap:15px;justify-content:center}
+  button{background:#667eea;color:#fff;border:none;padding:12px 30px;border-radius:8px;font-size:16px;cursor:pointer;transition:all .2s}
+  button:hover{background:#5a6fd6;transform:translateY(-2px)}
+  button:disabled{background:#ccc;cursor:not-allowed;transform:none}
+  #next-btn{display:none}
+  #result-screen{display:none;text-align:center;padding:20px}
+  #result-screen h2{font-size:32px;color:#333;margin-bottom:10px}
+  #result-emoji{font-size:64px;margin:20px 0}
+  #final-marks{font-size:28px;color:#555;margin:15px 0}
+  #final-percentage{font-size:56px;font-weight:bold;color:#667eea;margin:10px 0}
+  #result-message{font-size:18px;color:#666;margin-bottom:30px;padding:15px;background:#f8f9fa;border-radius:10px}
+  #review-btn{background:#28a745}
+  #review-btn:hover{background:#218838}
+  .review-item{background:#f8f9fa;border-radius:10px;padding:20px;margin:15px 0;text-align:left}
+  .review-q{font-weight:bold;color:#333;margin-bottom:10px}
+  .review-ans{color:#28a745;font-weight:500}
+  .review-wrong{color:#dc3545;text-decoration:line-through;margin-right:15px}
+  #co-badge{position:absolute;top:20px;right:20px;background:#667eea;color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold}
+  .percentage-circle{width:150px;height:150px;border-radius:50%;background:conic-gradient(#667eea var(--pct),#e0e0e0 0);display:flex;align-items:center;justify-content:center;margin:20px auto;position:relative}
+  .percentage-circle::before{content:'';position:absolute;width:120px;height:120px;background:#fff;border-radius:50%}
+  .percentage-text{position:relative;z-index:1;font-size:36px;font-weight:bold;color:#667eea}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="header">
+    <div>
+      <div id="title">🌿 EES Quiz</div>
+      <div style="font-size:12px;color:#888;margin-top:4px">Environmental Studies - Random Mode</div>
+    </div>
+    <div id="progress-box">
+      <div id="progress">Question 1 / 65</div>
+    </div>
+  </div>
+  
+  <div id="co-badge">CO</div>
+  
+  <div id="quiz-screen">
+    <div id="question-box">
+      <div id="question"></div>
+    </div>
+    <div id="options"></div>
+    <div id="controls">
+      <button id="submit-btn" onclick="submitAnswer()" disabled>Submit Answer</button>
+      <button id="next-btn" onclick="nextQuestion()">Next →</button>
+    </div>
+  </div>
+  
+  <div id="result-screen">
+    <div id="result-emoji">🎯</div>
+    <h2>Quiz Complete!</h2>
+    <div id="final-marks">You scored <strong>0</strong> out of <strong>65</strong></div>
+    <div class="percentage-circle" id="pct-circle">
+      <div class="percentage-text" id="pct-text">0%</div>
+    </div>
+    <div id="result-message"></div>
+    <div id="controls">
+      <button onclick="showReview()">Review Answers</button>
+      <button onclick="restartQuiz()">Restart Quiz</button>
+    </div>
+    <div id="review-section" style="display:none;margin-top:30px;text-align:left;max-height:400px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<script>
+const quizData=[
+{q:"The species with thin population localised within restricted area is said to be….",options:["Rare","Threatened","Endangered","Vulnerable"],a:0,co:"CO-3-R"},
+{q:"How does climate change affect the biodiversity of Indian hotspot?",options:["It has no effect on the biodiversity","It disrupts ecosystems and accelerates habitat loss","It encourages the growth of species from other regions","It boosts species population in these regions"],a:1,co:"CO-3-A"},
+{q:"Which of the following is not a cause for loss of biodiversity?",options:["Destruction of habitat","Invasion by alien species","Keeping animals in zoological parks","Over-exploitation of natural resources"],a:2,co:"CO-3-A"},
+{q:"The sequence of eating and being eaten in an ecosystem is known as ……………..",options:["Food supply","Food constant","Food habit","Food chain"],a:3,co:"CO-3-U"},
+{q:"What role do individuals play in reducing pollution through sustainable practices?",options:["By the increasing energy consumption","By ignoring waste segregation","By supporting non-recyclable product","By using public transport and reducing plastic use"],a:3,co:"CO-4-A"},
+{q:"Pyramid of ……………….. is always upright.",options:["energy","biomass","forest","mass"],a:0,co:"CO-3-U"},
+{q:"Which of the following is considered to be major threat to global biodiversity?",options:["Genetically modified species","Global warming","pollination","none of the above"],a:1,co:"CO-3-R"},
+{q:"What is a key factor contributing to the weakness of the Eastern Himalayas as a biodiversity hotspot?",options:["Rich and intact ecosystems","strong community involvement in conservation","high level of government funding","Over-tourism and habitat fragmentation"],a:3,co:"CO-3-U"},
+{q:"Thar in India is a ………………",options:["desert","sea","river","muddy land"],a:0,co:"CO-3-R"},
+{q:"To track changes in land use and deforestation over time, an environmental organization should utilize _______ technology.",options:["wearable devices","electronic health records","satellite imaging and remote sensing","E-Governance"],a:2,co:"CO-5-U"},
+{q:"In-situ conservation of biodiversity is also called as ………………..",options:["on site","ex-situ","over site","global site"],a:0,co:"CO-3-U"},
+{q:"What is the role of zoos and botanical gardens in biodiversity conservation?",options:["They assist in the breeding and preservation of endangered species","They help to display species for public entertainment","They are only involved in research, not conservation","They deplete natural resources"],a:0,co:"CO-3-A"},
+{q:"Which of the following is a characteristic of an ecosystem?",options:["It involves constant interaction between biotic and abiotic factors","It lacks energy flow","It is Independent of environmental changes","It always remains in a fixed state"],a:0,co:"CO-3-A"},
+{q:"Which organisation is responsible for conducting biodiversity assessments in India?",options:["National Biodiversity authority (NBA)","Indian Council of agricultural Research (ICAR)","Central Pollution Control Board (CPCB)","Ministry of environment, forest and climate change (MOEFCC)"],a:0,co:"CO-3-A"},
+{q:"Germplasm banks or gene banks are established for ………..conservation of biodiversity.",options:["in-situ","ex-situ","over situ","none of these"],a:1,co:"CO-3-A"},
+{q:"Primary sewage treatment removes ________ percentage of the biochemical oxygen demand from domestic sewage.",options:["10-20%","25-40%","45-50%","more than 50%"],a:1,co:"CO-4-A"},
+{q:"A village relies on a nearby lake for drinking water, but the lake is being polluted by household waste. What is the best step the villagers can take?",options:["Shift to using groundwater without treating the lake","Continue dumping waste in the lake","Increase the amount of household waste","Start a waste management program and clean the lake regularly"],a:3,co:"CO-4-A"},
+{q:"Natural mechanism of self-clearing atmospheric air are ___________.",options:["Suspecting, hanging, exhausting","dispersion, setting, absorption","electronic Precipitators","Green belt development"],a:1,co:"CO-4-A"},
+{q:"The pollutants that can be broken down rapidly by the natural process is called as _________.",options:["Organic pollutants","Inorganic Pollutants","Biodegradable Pollutants","Non-Biodegradable pollutants"],a:2,co:"CO-4-A"},
+{q:"Most affected country by noise pollution is______.",options:["Russia","China","India","Japan"],a:2,co:"CO-4-A"},
+{q:"Sound intensity is the air pressure caused by ______.",options:["light waves","space waves","transvers waves","sound waves"],a:3,co:"CO-4-A"},
+{q:"Which one of the following is NOT a primary pollutant?",options:["nitrogen oxides","sulfuric acid","sulfur dioxide","carbon monoxide"],a:1,co:"CO-4-A"},
+{q:"Natural pollution is caused by…………",options:["volcanic eruptions","vehicle emission","cutting of woods","smoke from industry"],a:0,co:"CO-4-A"},
+{q:"Primary pollutants are those pollutants:",options:["Released directly into air","Released by chemical reaction","Released by process of photosynthesis","Released by process of hydration"],a:0,co:"CO-4-U"},
+{q:"Factories are the ……………. Of water pollution.",options:["point source","non-point source","artificial source","none of these"],a:0,co:"CO-4-U"},
+{q:"…………….are the source of pollutants that cannot be traced to a single point of discharge.",options:["Point source","Non-point source","Artificial source","None of these"],a:1,co:"CO-4-U"},
+{q:"……………. is the chemical reaction of sunlight, nitrogen oxides and volatile organic compounds in the atmosphere.",options:["Photochemical smog","Persistent smog","Permanent smog","None of these"],a:0,co:"CO-4-U"},
+{q:"Noise pollution is measured in……….",options:["Decibel unit","Cobalt unit","Sound unit","Hearing unit"],a:0,co:"CO-4-R"},
+{q:"Noise standards in silence zone in day time is ………….. dB (A).",options:["10","20","30","50"],a:3,co:"CO-4-R"},
+{q:"Silence zone is referred as area upto …………….meters around such as hospital, educational institutions and courts.",options:["100","200","300","400"],a:0,co:"CO-4-R"},
+{q:"As per BIS, pH value of drinking water is ……………….",options:["1-2","2-4","4-8","6.5-8.5"],a:3,co:"CO-4-R"},
+{q:"As per BIS, the acceptable limit of dissolved solids (mg/l) in drinking water is …………….",options:["100","200","500","1000"],a:2,co:"CO-4-R"},
+{q:"Which state has made it compulsory to harvest rain water for all buildings?",options:["Rajasthan","West Bengal","Tamilnadu","Maharashtra"],a:2,co:"CO-4-R"},
+{q:"The Air (prevention and control of pollution) Act was enforced in……………",options:["1951","1961","1971","1981"],a:3,co:"CO-5-R"},
+{q:"Water (prevention and control of pollution) Act was enforced in……………",options:["1964","1974","1984","1994"],a:1,co:"CO-5-R"},
+{q:"The Environment (protection) Act came into force on ……………..",options:["1st November 1986","19th November 1986","20th November 1999","19th November 1996"],a:1,co:"CO-5-R"},
+{q:"The Environment (protection) Act, 1986, on November 19. The November 19 is birth anniversary of our late Prime Minister ……………",options:["Jawaharlal Nehru","Lal Bahadur Shastri","Indira Gandhi","Morarji Desai"],a:2,co:"CO-5-R"},
+{q:"Wildlife (protection) Act came into force in the year ……………",options:["1972","1982","1992","1902"],a:0,co:"CO-5-R"},
+{q:"The ……………. Amendment of Indian constitution is for environmental protection.",options:["40","30","42","52"],a:2,co:"CO-5-R"},
+{q:"In 42nd Amendment for environmental protection Article no is ………….",options:["40-A","48-A","50-A","59-C"],a:1,co:"CO-5-R"},
+{q:"CPCB stands for……………",options:["Central Pollution Control Board","Central Pollution Control Body","Central Population Control Board","Central Prevention Control Board"],a:0,co:"CO-5-R"},
+{q:"NGO stands for…………. ",options:["Non-Governmental Organisation","Non-Governmental Office","Non-Group Organisation","None of these"],a:0,co:"CO-5-R"},
+{q:"Which of the following natural elements is NOT explicitly mentioned in Article 51-A(g)?",options:["Lakes","Rivers","Mountains","Wildlife"],a:2,co:"CO-5-R"},
+{q:"Headquarters of MPCB (Maharashtra Pollution Control Board):",options:["Pune","Mumbai","Nashik","Nagpur"],a:0,co:"CO-5-R"},
+{q:"Environmental information system (ENVIS) has its headquarters in …………",options:["Mumbai","Delhi","Nagpur","Indore"],a:1,co:"CO-5-R"},
+{q:"Which IT tool is used to integrate spatial data with environmental data for land use and conservation analysis?",options:["Decision Support Systems (DSS)","Geographic Information Systems (GIS)","Energy Management Systems (EMS)","Electronic Health Records (EHR)"],a:1,co:"CO-5-A"},
+{q:"Solar desalination systems operate by utilizing _________ energy to evaporate seawater.",options:["Wind","Biomass","Geothermal","Solar"],a:3,co:"CO-5e-A"},
+{q:"Green architecture is also known as …………………..architecture.",options:["sustainable","global","natural","ECO"],a:0,co:"CO-5-U"},
+{q:"This is one of the principle of green architecture.",options:["Good agriculture","Global warming","Indoor air quality","Cattle conservation"],a:2,co:"CO-5-A"},
+{q:"Solar panels are photo ……………..panels that generate electricity from sunlight.",options:["electrical","electronic","plastic","voltaic"],a:3,co:"CO-5-A"},
+{q:"Vertical farming is also known as……….",options:["great farming","global farming","indoor farming","E-farming"],a:2,co:"CO-5-A"},
+{q:"…………….technique is used in vertical farming.",options:["Hydroponics","E-watering","Delta method","Beta method"],a:0,co:"CO-5-U"},
+{q:"Nutrient Film Technique (NFT) is used in ………..farming.",options:["E-watering","Global","Composting","Vertical"],a:3,co:"CO-5-R"},
+{q:"NFT and EBB and Flow methods are used for ……..farming.",options:["Global","Composting","Vertical","Hill and Clief"],a:2,co:"CO-5-U"},
+{q:"……………is the technique in which plants grow in the air, with their roots suspended in a nutrient rich mist.",options:["Aeroponics","E-solution","Air","Solar water"],a:0,co:"CO-5-U"},
+{q:"BEV and PHEV are the types of ……………",options:["Vertical farming","Horizontal farming","Watering to plants","Electrical vehicles"],a:3,co:"CO-5-A"},
+{q:"Plant based packaging is also known as……….packaging.",options:["chemical","non-chemical","bio","global"],a:2,co:"CO-5-U"},
+{q:"What is the key difference between Article 48A and 51A(g)?",options:["Article 48A is about fundamental duties while Article 51A(g) is about directive principles","Article 48A places responsibility on the state while Article 51A(g) places responsibility on citizens","both are the fundamental duties of the state","both place responsibility only on the judiciary"],a:1,co:"CO-5-U"},
+{q:"Which of the following is not a major source of groundwater contamination?",options:["agricultural products","landfills","underground storage tanks","all of the above are major sources of groundwater contamination"],a:3,co:"CO-4-U"},
+{q:"The atmosphere of big cities is polluted most by,",options:["household waste","radioactive falls out","automobile exhausts","pestricides"],a:2,co:"CO-4-A"},
+{q:"Which of the following are the example of Municipal and industrial discharge pipes?",options:["Nonpoint sources of pollution","Violations of the Clean Water Act","Point sources of pollution","Irrigation"],a:2,co:"CO-4-A"},
+{q:"Which of the following is secondary pollutant?",options:["CO2","CO","O3","SO2"],a:2,co:"CO-4-U"},
+{q:"Electric vehicles (EVs) contribute to cleaner environment as:",options:["They eliminate carbon dioxide emissions","They use only fossil fuel for power","They require more energy to operate than conventional vehicles","They reduce reliance on gasoline, lowering greenhouse gas emissions"],a:3,co:"CO-5-A"},
+{q:"BOD value of domestic sewage before treatment is about:",options:["200–400 mg/L","0–100 mg/L","100–300 mg/L","400–500 mg/L"],a:0,co:"CO-4-A"},
+{q:"According to WHO, the maximum permissible level of chloride in drinking water is:",options:["100mg/L","400mg/L","250mg/L","650 mg/L"],a:2,co:"CO-4-A"}
+];
+
+let currentQ=0, score=0, selected=null, answered=false, wrongAnswers=[];
+let questionOrder=[], shuffledOptions=[];
+
+function shuffleArray(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
+}
+
+function init(){
+  currentQ=0; score=0; wrongAnswers=[];
+  
+  // Create random question order
+  questionOrder=[...Array(quizData.length).keys()];
+  shuffleArray(questionOrder);
+  
+  // Prepare shuffled options for each question
+  shuffledOptions=[];
+  questionOrder.forEach(idx=>{
+    const q=quizData[idx];
+    const opts=[...q.options];
+    const optIndices=[0,1,2,3];
+    shuffleArray(optIndices);
+    
+    // Find new position of correct answer
+    const newCorrect=optIndices.indexOf(q.a);
+    
+    // Shuffle options
+    const shuffledOpts=optIndices.map(i=>opts[i]);
+    
+    shuffledOptions.push({
+      originalIdx:idx,
+      options:shuffledOpts,
+      correct:newCorrect,
+      co:q.co,
+      q:q.q
+    });
+  });
+  
+  document.getElementById('quiz-screen').style.display='block';
+  document.getElementById('result-screen').style.display='none';
+  document.getElementById('review-section').style.display='none';
+  document.getElementById('next-btn').textContent='Next →';
+  loadQuestion();
+}
+
+function loadQuestion(){
+  answered=false; selected=null;
+  const current=shuffledOptions[currentQ];
+  const originalQ=quizData[current.originalIdx];
+  
+  document.getElementById('progress').textContent=`Question ${currentQ+1} / ${quizData.length}`;
+  document.getElementById('co-badge').textContent=current.co;
+  document.getElementById('question').innerHTML=`<span id="question-num">Q${currentQ+1}.</span>${current.q}`;
+  
+  const optsDiv=document.getElementById('options');
+  optsDiv.innerHTML='';
+  current.options.forEach((opt,i)=>{
+    const div=document.createElement('div');
+    div.className='option';
+    div.innerHTML=`<span class="option-letter">${String.fromCharCode(65+i)}</span>${opt}`;
+    div.onclick=()=>selectOption(i);
+    optsDiv.appendChild(div);
+  });
+  
+  document.getElementById('submit-btn').style.display='inline-block';
+  document.getElementById('submit-btn').disabled=true;
+  document.getElementById('next-btn').style.display='none';
+}
+
+function selectOption(idx){
+  if(answered) return;
+  selected=idx;
+  document.querySelectorAll('.option').forEach((el,i)=>{
+    el.classList.toggle('selected',i===idx);
+  });
+  document.getElementById('submit-btn').disabled=false;
+}
+
+function submitAnswer(){
+  if(answered || selected===null) return;
+  answered=true;
+  const current=shuffledOptions[currentQ];
+  const opts=document.querySelectorAll('.option');
+  
+  opts[current.correct].classList.add('correct');
+  if(selected!==current.correct){
+    opts[selected].classList.add('wrong');
+    wrongAnswers.push({
+      qNum:currentQ+1,
+      question:current.q,
+      yourAnswer:current.options[selected],
+      correctAnswer:current.options[current.correct],
+      co:current.co
+    });
+  } else {
+    score++;
+  }
+  
+  document.getElementById('submit-btn').style.display='none';
+  document.getElementById('next-btn').style.display='inline-block';
+  
+  if(currentQ>=quizData.length-1){
+    document.getElementById('next-btn').textContent='See Results →';
+  }
+}
+
+function nextQuestion(){
+  currentQ++;
+  if(currentQ>=quizData.length){
+    showResults();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showResults(){
+  document.getElementById('quiz-screen').style.display='none';
+  document.getElementById('result-screen').style.display='block';
+  
+  const pct=Math.round(score/quizData.length*100);
+  
+  document.getElementById('final-marks').innerHTML=`You scored <strong>${score}</strong> out of <strong>${quizData.length}</strong>`;
+  
+  document.getElementById('pct-circle').style.setProperty('--pct',`${pct}%`);
+  document.getElementById('pct-text').textContent=`${pct}%`;
+  
+  let emoji,msg;
+  if(pct>=90){emoji='🏆';msg='Outstanding! You are an EES expert!';}
+  else if(pct>=75){emoji='🌟';msg='Great job! Very good knowledge!';}
+  else if(pct>=60){emoji='👍';msg='Good effort! Keep studying!';}
+  else if(pct>=40){emoji='📚';msg='Needs improvement. Review the material.';}
+  else{emoji='💪';msg='Keep practicing! You will get better!';}
+  
+  document.getElementById('result-emoji').textContent=emoji;
+  document.getElementById('result-message').textContent=msg;
+}
+
+function showReview(){
+  const rev=document.getElementById('review-section');
+  rev.style.display=rev.style.display==='none'?'block':'none';
+  
+  if(rev.style.display==='block'){
+    let html='<h3 style="text-align:center;margin-bottom:20px">Review Wrong Answers</h3>';
+    if(wrongAnswers.length===0){
+      html+='<p style="text-align:center;color:#28a745;font-size:18px">🎉 Perfect! No wrong answers!</p>';
+    } else {
+      wrongAnswers.forEach(wa=>{
+        html+=`
+          <div class="review-item">
+            <div class="review-q">Q${wa.qNum}. ${wa.question}</div>
+            <div>Your answer: <span class="review-wrong">${wa.yourAnswer}</span></div>
+            <div>Correct answer: <span class="review-ans">${wa.correctAnswer}</span></div>
+            <div style="font-size:12px;color:#888;margin-top:8px">${wa.co}</div>
+          </div>
+        `;
+      });
+    }
+    rev.innerHTML=html;
+  }
+}
+
+function restartQuiz(){
+  init();
+}
+
+init();
+</script>
+</body>
+</html>
